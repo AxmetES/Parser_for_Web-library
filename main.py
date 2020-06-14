@@ -1,7 +1,7 @@
 import requests
 import os
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 import argparse
 
 
@@ -31,9 +31,14 @@ def save_file(response, filename, folder):
 
 
 def get_base_url(download_url, payload_id):
-    _url = urlparse(download_url)
-    base_url = _url._replace(path=str(payload_id)).geturl()
+    url = urlparse(download_url)
+    base_url = url._replace(path=str(payload_id)).geturl()
     return base_url
+
+
+def get_image(book_img_url, download_url):
+    image_url = urlparse(download_url)._replace(path=book_img_url).geturl()
+    return image_url
 
 
 def get_title(download_url, payload_id):
@@ -42,7 +47,14 @@ def get_title(download_url, payload_id):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     book_title = soup.find('h1').text.split('::').pop(0).strip()
-    return book_title
+    if soup.find('div', class_='bookimage'):
+        book_img_url = soup.find('div', class_='bookimage').find('img')['src']
+        img_url = get_image(book_img_url, download_url)
+
+    else:
+        book_img_url = soup.find('img', class_='imtexts')['src']
+        img_url = get_image(book_img_url, download_url)
+    return book_title, img_url
 
 
 def main():
@@ -53,10 +65,11 @@ def main():
     for i in range(10):
         _id = i + 1
         payload = {'id': _id}
-        title = get_title(download_url, payload_id=f'b{_id}')
+        title, img_src = get_title(download_url, payload_id=f'b{_id}')
         filename = f'{_id}. {title}'
-        filepath = download_txt(download_url, payload, filename, directory)
-        print(filepath)
+        # filepath = download_txt(download_url, payload, filename, directory)
+        print(title)
+        print(img_src)
 
 
 if __name__ == '__main__':
