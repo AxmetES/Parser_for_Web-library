@@ -41,12 +41,23 @@ def get_image(book_img_url, download_url):
     return image_url
 
 
+def download_image(img_src, img_directory):
+    img_name = img_src.split('/')[-1]
+    response = requests.get(img_src, allow_redirects=False)
+    response.raise_for_status()
+    file_path = os.path.join(img_directory, img_name)
+    with open(file_path, 'wb') as file:
+        file.write(response.content)
+    return file_path
+
+
 def get_title(download_url, payload_id):
     base_url = get_base_url(download_url, payload_id)
     response = requests.get(base_url)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     book_title = soup.find('h1').text.split('::').pop(0).strip()
+    # book_comments = soup.find_all('div', class_='texts')  comments
     if soup.find('div', class_='bookimage'):
         book_img_url = soup.find('div', class_='bookimage').find('img')['src']
         img_url = get_image(book_img_url, download_url)
@@ -54,22 +65,26 @@ def get_title(download_url, payload_id):
     else:
         book_img_url = soup.find('img', class_='imtexts')['src']
         img_url = get_image(book_img_url, download_url)
-    return book_title, img_url
+    return book_title, img_url,
 
 
 def main():
     download_url = 'http://tululu.org/txt.php'
 
-    directory = 'books'
-    os.makedirs(directory, exist_ok=True)
+    book_directory = 'books'
+    os.makedirs(book_directory, exist_ok=True)
+    img_directory = 'img'
+    os.makedirs(img_directory, exist_ok=True)
     for i in range(10):
         _id = i + 1
         payload = {'id': _id}
         title, img_src = get_title(download_url, payload_id=f'b{_id}')
         filename = f'{_id}. {title}'
         # filepath = download_txt(download_url, payload, filename, directory)
+        img_filepath = download_image(img_src, img_directory)
         print(title)
         print(img_src)
+        print(img_filepath)
 
 
 if __name__ == '__main__':
