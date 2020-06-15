@@ -57,7 +57,8 @@ def get_title(download_url, payload_id):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     book_title = soup.find('h1').text.split('::').pop(0).strip()
-    # book_comments = soup.find_all('div', class_='texts')  comments
+    book_comments = soup.find_all('div', class_='texts')
+
     if soup.find('div', class_='bookimage'):
         book_img_url = soup.find('div', class_='bookimage').find('img')['src']
         img_url = get_image(book_img_url, download_url)
@@ -65,7 +66,7 @@ def get_title(download_url, payload_id):
     else:
         book_img_url = soup.find('img', class_='imtexts')['src']
         img_url = get_image(book_img_url, download_url)
-    return book_title, img_url,
+    return book_title, img_url, book_comments
 
 
 def main():
@@ -78,13 +79,15 @@ def main():
     for i in range(10):
         _id = i + 1
         payload = {'id': _id}
-        title, img_src = get_title(download_url, payload_id=f'b{_id}')
+        title, img_src, book_comments = get_title(download_url, payload_id=f'b{_id}')
         filename = f'{_id}. {title}'
         # filepath = download_txt(download_url, payload, filename, directory)
         img_filepath = download_image(img_src, img_directory)
         print(title)
-        print(img_src)
-        print(img_filepath)
+        # print(img_src)
+        # print(img_filepath)
+        for comment in book_comments:
+            print(comment.text)
 
 
 if __name__ == '__main__':
