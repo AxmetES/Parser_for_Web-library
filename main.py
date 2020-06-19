@@ -76,10 +76,11 @@ def main():
         payload = {'id': _id}
         title, img_src, book_comments, book_genres = get_title(download_url, payload_id=f'b{_id}')
         filename = f'{_id}. {title}'
-        # filepath = download_txt(download_url, payload, filename, directory)
+        filepath = download_txt(download_url, payload, filename, book_directory)
         img_filepath = download_image(img_src, img_directory)
         print(title)
-        # print(img_src)
+        print(filepath)
+        print(img_src)
         print(img_filepath)
         for comment in book_genres:
             print(comment.text)

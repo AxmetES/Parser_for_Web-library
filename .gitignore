@@ -2,5 +2,7 @@
 /venv
 /books
 /img
+/imgs
+/json
 .env
 
