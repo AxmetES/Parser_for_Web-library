@@ -1,8 +1,9 @@
 from bs4 import BeautifulSoup
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import os
 import json
+import argparse
 
 
 def make_url(url, title):
@@ -21,13 +22,7 @@ def download_image(url, img_id, img_directory):
     return file_path
 
 
-def download_txt(book_url, num, book_title, book_directory):
-    link = None
-    soup = get_soup(book_url)
-    links = soup.find('table', class_='d_book').find_all('a')
-    for a in links:
-        if 'txt' in a['href']:
-            link = a['href']
+def download_txt(book_url, num, book_title, book_directory, link):
     if link is not None:
         download_url = make_url(book_url, link)
         response = requests.get(download_url, allow_redirects=True)
@@ -53,6 +48,31 @@ def get_soup(url):
     return soup
 
 
+def get_link(page_pars):
+    link = None
+    links = page_pars.select('table.d_book a')
+    for a in links:
+        if 'txt' in a['href']:
+            link = a['href']
+    return link
+
+
+def get_argpars(lust_page):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start_page', type=int, help='input start page number to pars.')
+    parser.add_argument('--end_page', type=int, nargs='?', default=lust_page,
+                        help='input end page number to pars.')
+    return parser
+
+
+def get_end_page(main_page_url):
+    soup = get_soup(main_page_url)
+    pages = soup.select('.center a')
+    page = [page.text for page in pages][-1:]
+    lust_page = int(''.join(page))+1
+    return lust_page
+
+
 def main():
     img_directory = 'imgs'
     os.makedirs(img_directory, exist_ok=True)
@@ -61,30 +81,38 @@ def main():
     dir_json = 'json'
     os.makedirs(dir_json, exist_ok=True)
     page_num = 0
+    main_page_url = 'http://tululu.org/l55'
+    lust_page = get_end_page(main_page_url)
+    parser = get_argpars(lust_page)
+    args = parser.parse_args()
 
     books_catalog = []
-    for page in range(1, 5):
+    for page in range(args.start_page, args.end_page):
         url = f'http://tululu.org/l55/{page}'
         soup = get_soup(url)
-        books = soup.find_all('table', class_='d_book')
+        books = soup.select("table.d_book")
         for book in books:
             page_num += 1
-            book_title = ''.join(book.find('a')['title'].split(' - ')[1:])
-            book_author = ''.join(book.find('a')['title'].split(' - ')[:1])
-            img_id = book.find('img')['src']
-            book_id = book.find('a')['href']
+            book_author = ''.join(book.select_one('a')['title'].split(' - ')[:1])
+            book_title = ''.join(book.select_one('a')['title'].split(' - ')[1:])
+            img_id = book.select_one('img')['src']
+            book_id = book.select_one('a')['href']
             book_url = make_url(url, book_id)
-            book_path = download_txt(book_url, page_num, book_title, book_directory)
-            if book_path != 'No txt file of book':
-                img_path = download_image(url, img_id, img_directory)
-                page_soup = get_soup(book_url)
-                comments_tags = page_soup.find_all('div', class_='texts')
-                comments = [comment.find('span', class_='black').text.replace('\n', '') for comment in comments_tags]
-                genres_tag = page_soup.find('span', class_='d_book').find_all('a')
-                genres = [genre.text for genre in genres_tag]
-                print(book_path)
+            page_pars = get_soup(book_url)
+            link_txt = get_link(page_pars)
 
-            if book_path != 'No txt file of book':
+            if link_txt is not None:
+                book_path = download_txt(book_url, page_num, book_title, book_directory, link_txt)
+                img_path = download_image(url, img_id, img_directory)
+
+                comments_pars = page_pars.select(".black")
+                comments = [comment.text.replace('\n', '') for comment in comments_pars][10:]
+
+                genres_pars = page_pars.select("span.d_book a[href]")
+                genres = [genre.text for genre in genres_pars]
+
+                print(book_url)
+
                 books_catalog.append({
                     'title': book_title,
                     'author': book_author,
