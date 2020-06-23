@@ -3,6 +3,10 @@
  Script for pars [book site tululu.org](http://tululu.org/l55)
 
 #### Getting Started
+* cd to the directory where requirements.txt is located.
+* activate your virtualenv.
+* run: ```pip install -r requirements.txt``` in your shell.
+
  To pars all pages:
 ```commandline
 python parse_tululu_category.py
