@@ -5,7 +5,10 @@
 ## Getting Started
 * cd to the directory where requirements.txt is located.
 * activate your virtualenv.
-* run: ```pip install -r requirements.txt``` in your shell.
+* install dependencies:
+ ```shell script
+ pip install -r requirements.txt
+``` 
 
  To pars all pages:
 ```shell script
@@ -47,5 +50,5 @@ python parse_tululu_category.py
  
  ## Motivation
  
- The code is written for educational purposes - this is a lesson in Python and web development on the site [Devman] (https://dvmn.org).
+ The code is written for educational purposes - this is a lesson in Python and web development on the site [Devman](https://dvmn.org).
   
