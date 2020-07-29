@@ -1,48 +1,48 @@
 ## Script for parsing book site.
 
- Script for pars [book site tululu.org](http://tululu.org/l55)
+ Script for parsing [book site tululu.org](http://tululu.org/l55)
 
 ## Getting Started
 * cd to the directory where requirements.txt is located.
 * activate your virtualenv.
 * install dependencies:
- ```shell script
+```bat
  pip install -r requirements.txt
 ``` 
 
  To pars all pages:
-```shell script
+```bat
 python parse_tululu_category.py
 ```
 
  Script can take special commands (optional):
-```shell script
+```bat
 --start_page
 ``` 
  Indicates page since which parse started. 
  Default pars started from first page.
  
- ```shell script
+```bat
 --end_page
 ``` 
  Indicates page which parse will be end. Default pars ended by lats page.
 
-```shell script
+```bat
 --dist_folder
 ```
  Indicates folder for parsed files.By default, the files is created in the dist_folder.
 
-```shell script
+```bat
 --skip_imgs
 ```
  Flag, if exist all images wouldn't download.
  
- ```shell script
+```bat
 --skip_txt
 ``` 
  Flag, if exist all txt wouldn't download.
   
- ```shell script
+```bat
 --json_path
 ```
  Indicates folder for json file which would created by the script.
