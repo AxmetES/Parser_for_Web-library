@@ -12,7 +12,7 @@ import sys
 import time
 
 
-def std_print(*args, **kwargs):
+def print_stderr(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
@@ -125,23 +125,23 @@ def main():
     books_catalog = []
     book_path = img_path = None
 
-    try:
-        last_page = get_end_page(main_page_url)
-        parser = get_argpars(last_page)
-        args = parser.parse_args()
+    last_page = get_end_page(main_page_url)
+    parser = get_argpars(last_page)
+    args = parser.parse_args()
 
-        main_directory, img_directory, book_directory, dir_json = make_directories(args)
+    main_directory, img_directory, book_directory, dir_json = make_directories(args)
 
-        for page in range(args.start_page, args.end_page):
-            url = f'http://tululu.org/l55/{page}'
-            books = get_soup(url).select("table.d_book")
-            for book in books:
+    for page in range(args.start_page, args.end_page):
+
+        url = f'http://tululu.org/l55/{page}'
+        books = get_soup(url).select("table.d_book")
+        for book in books:
+            try:
                 try:
                     img_id, book_id, book_title, book_author = serialize_book(book)
                     book_url = urljoin(url, book_id)
                     page_pars = get_soup(book_url)
                     download_link = get_link(page_pars)
-                    print(download_link)
                 except IndexError:
                     print(f'Download link is broken or is absent - {book_title}.')
                     download_link = None
@@ -160,12 +160,12 @@ def main():
                 books_catalog.append(
                     get_catalog_serialize(book_title, book_author, img_path, book_path, comments, genres))
 
-        with open(os.path.join(dir_json, 'books_catalog.json'), 'w', encoding='utf8') as file:
-            json.dump(books_catalog, file, ensure_ascii=False, indent=4)
+            except requests.exceptions.ConnectionError:
+                print_stderr('Connection error')
+                time.sleep(3)
 
-    except requests.exceptions.ConnectionError:
-        std_print('Connection error')
-        time.sleep(3)
+    with open(os.path.join(dir_json, 'books_catalog.json'), 'w', encoding='utf8') as file:
+        json.dump(books_catalog, file, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
