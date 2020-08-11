@@ -16,7 +16,7 @@ def print_stderr(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def is_redirect(response):
+def chech_for_redirect(response):
     if response.status_code == 301:
         raise requests.HTTPError('Request redirected 301.')
 
@@ -24,7 +24,7 @@ def is_redirect(response):
 def download_image(image_url, img_id, img_directory):
     response = requests.get(image_url, allow_redirects=False, timeout=5)
     response.raise_for_status()
-    is_redirect(response)
+    chech_for_redirect(response)
     extension = img_id[-4:]
     img_name = sanitize_filename(os.path.join(get_unique_id(6), extension))
     file_path = os.path.join(img_directory, img_name)
@@ -36,7 +36,7 @@ def download_image(image_url, img_id, img_directory):
 def download_txt(download_url, book_title, book_directory):
     response = requests.get(download_url, allow_redirects=True, timeout=5)
     response.raise_for_status()
-    is_redirect(response)
+    chech_for_redirect(response)
     my_id = get_unique_id(6)
     book_name = sanitize_filename(f'{my_id} - {book_title}.txt')
     file_path = os.path.join(book_directory, book_name)
@@ -48,7 +48,7 @@ def download_txt(download_url, book_title, book_directory):
 def get_soup(url):
     response = requests.get(url, timeout=5)
     response.raise_for_status()
-    is_redirect(response)
+    chech_for_redirect(response)
     soup = BeautifulSoup(response.text, 'lxml')
     return soup
 
@@ -65,9 +65,9 @@ def get_argpars(last_page):
     parser.add_argument('--end_page', type=int, nargs='?', default=last_page,
                         help='input end page number to pars.')
     parser.add_argument('--dist_folder', type=validate_filename_arg, nargs='?', default='dest_folder')
-    parser.add_argument('--skip_imgs', action='store_false', default=False,
+    parser.add_argument('--skip_imgs', action='store_true', default=False,
                         help='''input '--skip_imgs' if want skip downloading image files.''')
-    parser.add_argument('--skip_txt', action='store_false', default=False,
+    parser.add_argument('--skip_txt', action='store_true', default=False,
                         help='''input '--skip_txt' if want skip download text files.''')
     parser.add_argument('--json_path', type=str, nargs='?', default=os.path.join('dest_folder', 'json'),
                         help='input path to json file.')
@@ -109,7 +109,7 @@ def serialize_page(page_pars):
     return comments, genres
 
 
-def get_catalog_serialize(book_title, book_author, img_path, book_path, comments, genres):
+def serialize_catalog(book_title, book_author, img_path, book_path, comments, genres):
     return {
         'title': book_title,
         'author': book_author,
@@ -150,18 +150,18 @@ def main():
                 image_url = urljoin(url, img_id)
                 comments, genres = serialize_page(page_pars)
 
-                if not args.skip_txt:
-                    if download_link:
-                        book_path = download_txt(download_url, book_title, book_directory)
-                if not args.skip_imgs:
-                    if not 'nopic' in img_id:
-                        img_path = download_image(image_url, img_id, img_directory)
+                if not args.skip_txt and download_link:
+                    book_path = download_txt(download_url, book_title, book_directory)
+                if not args.skip_imgs and not 'nopic' in img_id:
+                    img_path = download_image(image_url, img_id, img_directory)
 
                 books_catalog.append(
-                    get_catalog_serialize(book_title, book_author, img_path, book_path, comments, genres))
+                    serialize_catalog(book_title, book_author, img_path, book_path, comments, genres))
 
             except requests.exceptions.ConnectionError:
                 print_stderr('Connection error')
+            except requests.exceptions.HTTPError as msg:
+                print_stderr(msg)
                 time.sleep(3)
 
     with open(os.path.join(dir_json, 'books_catalog.json'), 'w', encoding='utf8') as file:
